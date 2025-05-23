@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -55,5 +56,10 @@ public class SchoolServiceImpl {
             return new ResponseEntity<>(res, HttpStatusCode.valueOf(404));
         }
         return new ResponseEntity<>(schoolOptional.get(), HttpStatusCode.valueOf(200));
+    }
+
+    @KafkaListener(topics = "topic1", groupId = "my-group-id")
+    public void getMessage(String message){
+        log.info("MESSAGE:->>>>{}", message);
     }
 }

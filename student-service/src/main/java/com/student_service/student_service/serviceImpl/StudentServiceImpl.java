@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -26,13 +28,15 @@ public class StudentServiceImpl {
 
     private final StudentRepo studentRepo;
     private final RestTemplate restTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
     @Value("${app.base-url}")
     private String BASE_URL;
 
     @Autowired
-    public StudentServiceImpl(StudentRepo studentRepo, RestTemplate restTemplate) {
+    public StudentServiceImpl(StudentRepo studentRepo, RestTemplate restTemplate, KafkaTemplate kafkaTemplate) {
         this.studentRepo = studentRepo;
         this.restTemplate = restTemplate;
+        this.kafkaTemplate = kafkaTemplate;
     }
 
     /**
@@ -72,6 +76,8 @@ public class StudentServiceImpl {
         if (schoolResponse.getBody().getId() == null){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "school record not found");
         }
+        kafkaTemplate.send("topic1", "student records fetched successfully");
+
         return StudentResponse
                 .builder()
                 .school(schoolResponse.getBody().getName())
@@ -81,5 +87,10 @@ public class StudentServiceImpl {
                 .lastName(student.getLastName())
                 .principal(schoolResponse.getBody().getPrincipal())
                 .build();
+    }
+
+    @KafkaListener(topics = "topic1", groupId = "group_id")
+    public void consume(String message) {
+        System.out.println("Message received: " + message);
     }
 }
